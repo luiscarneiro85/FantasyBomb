@@ -1,0 +1,1125 @@
+<html>
+	<head>
+		<title>Fantasy Bomb</title>
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<script>
+			var canvas;
+			var context;
+			
+			//1 - jogando - 2 gameOver  3 - shop
+			var estado = 1;
+			var indexFase = 0;					
+			var listaMapas = new Array();
+						
+			var southCavern = {'x':0,'y':0,'w':1024,'h':768,'imagem':new Image()};
+			var shopBackground = {'x':0,'y':0,'w':1024,'h':768,'imagem':new Image()};
+			var player = {'x':864,'y':672,'w':32,'h':32,'velX':7,'velY':7,'ativo':true,'hit':false,'delayHit':120,'hp':2,'hpMax':2,'moedas':0,'bombas':1,'maxBombas':1,
+						'listaBombas':new Array(),'imagem':[new Image(),new Image(),new Image(),new Image(),new Image(),new Image(),new Image(),new Image(),
+						new Image(),new Image(),new Image(),new Image()],'animationDelay':2,'imgIndex':0};
+			var bomb = {'x':0,'y':0,'w':32,'h':32,'ativo':false,'ready':false,'imagem':new Image()};
+			var bloco = {'x':320,'y':320,'w':32,'h':32,'imagem':new Image()};
+			var explosao = {'x':0,'y':0,'w':64,'h':64,'ativo':false,'delay':15,'imagem':[new Image(),new Image()],'animationDelay':7,'indexAnimation':0};
+			var bau = {'x':564,'y':362,'w':32,'h':32,'ativo':false,'imagem':new Image()};
+			var heart = {'x':96,'y':736,'w':32,'h':32,'imagem':new Image()};
+			var heartEmpety = {'x':96,'y':736,'w':32,'h':32,'imagem':new Image()};
+			var gold = {'x':392,'y':736,'w':32,'h':32,'imagem':new Image()};
+			var key = {'x':870,'y':740,'w':24,'h':24,'ativo':false,'imagem':new Image()};
+			var door = {'x':320,'y':352,'w':24,'h':24,'ativo':false,'imagem':new Image()};
+			var shop = {'x':128,'y':448,'w':24,'h':24,'ativo':false,'imagem':new Image()};
+			var shopOut = {'x':452,'y':640,'w':24,'h':24,'ativo':false,'imagem':new Image()};
+			
+			var heartItem = {'x':672,'y':433,'w':32,'h':32,'ativo':true,'imagem':new Image()};
+			var bombItem = {'x':832,'y':433,'w':32,'h':32,'ativo':true,'imagem':new Image()};
+			var potionItem = {'x':512,'y':433,'w':32,'h':32,'ativo':true,'imagem':new Image()};
+			
+			var bombaPreco = {'x':bombItem.x - 15,'y':bombItem.y + 40,'w':58,'h':17,'ativo':true,'imagem':new Image()};
+			var heartPreco = {'x':heartItem.x -15,'y':heartItem.y + 40,'w':58,'h':17,'ativo':true,'imagem':new Image()};
+			
+			//inimigos prefabs
+			var slime = {'id':1,'x':825,'y':542,'w':32,'h':32,'velX':5,'velY':5,'hp':1,'ativo':true,'moedas':3,'delay':300,'delayMax':300,'passos':5,'ataque':1,'imagem':new Image()};
+			var mouse = {'id':2,'x':304,'y':542,'w':32,'h':32,'velX':12,'velY':12,'hp':1,'ativo':true,'moedas':5,'delay':250,'delayMax':250,'passos':8,'ataque':1,'imagem':new Image()};
+			var skeleton = {'id':1,'x':504,'y':382,'w':32,'h':32,'velX':8,'velY':8,'hp':2,'ativo':true,'moedas':10,'delay':200,'delayMax':200,'passos':10,'ataque':2,'imagem':new Image()};
+			var spider = {'id':3,'x':80,'y':542,'w':32,'h':32,'velX':12,'velY':12,'hp':1,'ativo':true,'moedas':5,'delay':250,'delayMax':250,'passos':8,'ataque':1,'imagem':new Image()};
+			
+			//************************************
+			//fases
+			var listaFases = new Array();
+			//coloca as fases dentro do aray
+			listaFases.push({'id':1,'numeroInimigos':8,'xPorta':320,'yPorta':352,'xLoja':128,'yLoja':488,'listaInimigos': new Array(),'imagem':new Image()});
+			listaFases.push({'id':2,'numeroInimigos':11,'xPorta':96,'yPorta':96,'xLoja':928,'yLoja':160,'listaInimigos': new Array(),'imagem':new Image()});
+
+			//++++++++++++++++++++++++++++++++
+			//Inimigos
+			var listaInimigos = new Array();
+			//coloca os inimigos na lista
+			// adiciona os inimigos na lista da primeira fase
+			listaFases[0].listaInimigos.push({'id':slime.id,'x':825,'y':542,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[0].listaInimigos.push({'id':slime.id,'x':79,'y':362,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[0].listaInimigos.push({'id':slime.id,'x':164,'y':667,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[0].listaInimigos.push({'id':slime.id,'x':764,'y':77,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[0].listaInimigos.push({'id':mouse.id,'x':269,'y':77,'w':32,'h':32,'velX':mouse.velX,'velY':mouse.velY,'hp':mouse.hp,'ativo':true,'moedas':mouse.moedas,'delay':mouse.delay,
+							'delayMax':mouse.delayMax,'passos':mouse.passos,'ataque':mouse.ataque,'imagem':mouse.imagem});
+			listaFases[0].listaInimigos.push({'id':mouse.id,'x':609,'y':542,'w':32,'h':32,'velX':mouse.velX,'velY':mouse.velY,'hp':mouse.hp,'ativo':true,'moedas':mouse.moedas,'delay':mouse.delay,
+							'delayMax':mouse.delayMax,'passos':mouse.passos,'ataque':mouse.ataque,'imagem':mouse.imagem});
+			listaFases[0].listaInimigos.push({'id':mouse.id,'x':914,'y':222,'w':32,'h':32,'velX':mouse.velX,'velY':mouse.velY,'hp':mouse.hp,'ativo':true,'moedas':mouse.moedas,'delay':mouse.delay,
+							'delayMax':mouse.delayMax,'passos':mouse.passos,'ataque':mouse.ataque,'imagem':mouse.imagem});
+			listaFases[0].listaInimigos.push({'id':slime.id,'x':504,'y':382,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+								
+			// adiciona os inimigos na lista da segunda fase
+			listaFases[1].listaInimigos.push({'id':slime.id,'x':292,'y':603,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[1].listaInimigos.push({'id':slime.id,'x':420,'y':667,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[1].listaInimigos.push({'id':slime.id,'x':164,'y':667,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[1].listaInimigos.push({'id':slime.id,'x':548,'y':539,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[1].listaInimigos.push({'id':slime.id,'x':928,'y':96,'w':32,'h':32,'velX':slime.velX,'velY':slime.velY,'hp':slime.hp,'ativo':true,'moedas':slime.moedas,'delay':slime.delay,
+							'delayMax':slime.delayMax,'passos':slime.passos,'ataque':slime.ataque,'imagem':slime.imagem});
+			listaFases[1].listaInimigos.push({'id':spider.id,'x':112,'y':394,'w':32,'h':32,'velX':spider.velX,'velY':spider.velY,'hp':spider.hp,'ativo':true,'moedas':spider.moedas,'delay':spider.delay,
+							'delayMax':spider.delayMax,'passos':spider.passos,'ataque':spider.ataque,'imagem':spider.imagem});
+			listaFases[1].listaInimigos.push({'id':spider.id,'x':896,'y':298,'w':32,'h':32,'velX':spider.velX,'velY':spider.velY,'hp':spider.hp,'ativo':true,'moedas':spider.moedas,'delay':spider.delay,
+							'delayMax':spider.delayMax,'passos':spider.passos,'ataque':spider.ataque,'imagem':spider.imagem});
+			listaFases[1].listaInimigos.push({'id':mouse.id,'x':320,'y':448,'w':32,'h':32,'velX':mouse.velX,'velY':mouse.velY,'hp':mouse.hp,'ativo':true,'moedas':mouse.moedas,'delay':mouse.delay,
+							'delayMax':mouse.delayMax,'passos':mouse.passos,'ataque':mouse.ataque,'imagem':mouse.imagem});
+			listaFases[1].listaInimigos.push({'id':mouse.id,'x':480,'y':320,'w':32,'h':32,'velX':mouse.velX,'velY':mouse.velY,'hp':mouse.hp,'ativo':true,'moedas':mouse.moedas,'delay':mouse.delay,
+							'delayMax':mouse.delayMax,'passos':mouse.passos,'ataque':mouse.ataque,'imagem':mouse.imagem});
+			listaFases[1].listaInimigos.push({'id':mouse.id,'x':800,'y':128,'w':32,'h':32,'velX':mouse.velX,'velY':mouse.velY,'hp':mouse.hp,'ativo':true,'moedas':mouse.moedas,'delay':mouse.delay,
+							'delayMax':mouse.delayMax,'passos':mouse.passos,'ataque':mouse.ataque,'imagem':mouse.imagem});
+			listaFases[1].listaInimigos.push({'id':mouse.id,'x':512,'y':192,'w':32,'h':32,'velX':mouse.velX,'velY':mouse.velY,'hp':mouse.hp,'ativo':true,'moedas':mouse.moedas,'delay':mouse.delay,
+							'delayMax':mouse.delayMax,'passos':mouse.passos,'ataque':mouse.ataque,'imagem':mouse.imagem});
+			
+			
+			//cria matriz de blocos e xera as posicoes
+			var matriz = new Array(28);
+			var matrizFase1 = new Array(28);
+			var matrizFase2 = new Array(28);
+			var matrizFase3 = new Array(28);
+			
+			for(var i=0;i<20;i++)
+			{
+				matriz[i] = new Array(28);
+				for(var j=0;j<28;j++)
+				{
+					matriz[i][j] = 0;
+				}
+			}
+			for(var i=0;i<20;i++)
+			{
+				matrizFase1[i] = new Array(28);
+				for(var j=0;j<28;j++)
+				{
+					matrizFase1[i][j] = 0;
+				}
+			}
+			for(var i=0;i<20;i++)
+			{
+				matrizFase2[i] = new Array(28);
+				for(var j=0;j<28;j++)
+				{
+					matrizFase2[i][j] = 0;
+				}
+			}
+			for(var i=0;i<20;i++)
+			{
+				matrizFase3[i] = new Array(28);
+				for(var j=0;j<28;j++)
+				{
+					matrizFase3[i][j] = 0;
+				}
+			}
+			
+			var auxAnimation = player.animationDelay;
+					
+			//inicializa o cancas e o contexto e carrega as imagens 
+			function start()
+			{
+				canvas = document.getElementById("canvas");
+				context = canvas.getContext("2d");
+				
+				//inicializa as imagens
+				listaFases[0].imagem.src = "./Imagens/CavernaSul.png";
+				listaFases[1].imagem.src = "./Imagens/CavernaSul.png";
+				southCavern.imagem.src = "./Imagens/CavernaSul.png";
+				shopBackground.imagem.src = "./Imagens/shopBackground.png";
+				player.imagem[0].src = "./Imagens/Player_1.png";
+				player.imagem[1].src = "./Imagens/Player_2.png";
+				player.imagem[2].src = "./Imagens/Player_3.png";
+				player.imagem[3].src = "./Imagens/Player_4.png";
+				player.imagem[4].src = "./Imagens/Player_5.png";
+				player.imagem[5].src = "./Imagens/Player_6.png";
+				player.imagem[6].src = "./Imagens/Player_7.png";
+				player.imagem[7].src = "./Imagens/Player_8.png";
+				player.imagem[8].src = "./Imagens/Player_9.png";
+				player.imagem[9].src = "./Imagens/Player_10.png";
+				player.imagem[10].src = "./Imagens/Player_11.png";
+				player.imagem[11].src = "./Imagens/Player_12.png";
+				bomb.imagem.src = "./Imagens/bomb.png";
+				bloco.imagem.src = "./Imagens/brick.png";
+				explosao.imagem[0].src = "./Imagens/explosao.png";
+				explosao.imagem[1].src = "./Imagens/explosao2.png";
+				bau.imagem.src = "./Imagens/bau.png";
+				heart.imagem.src = "./Imagens/hp.png";
+				heartEmpety.imagem.src = "./Imagens/hpVazio.png";
+				gold.imagem.src = "./Imagens/gold.png";
+				key.imagem.src = "./Imagens/chave.png";
+				door.imagem.src = "./Imagens/door.png";
+				shop.imagem.src = "./Imagens/shop.png";
+				shopOut.imagem.src = "./Imagens/shopOut.png";
+				
+				slime.imagem.src = "./Imagens/slime.png";
+				mouse.imagem.src = "./Imagens/rato.png";
+				skeleton.imagem.src = "./Imagens/esqueleto.png";
+				spider.imagem.src = "./Imagens/aranha.png";
+				
+				heartItem.imagem.src = "./Imagens/hp.png";
+				bombItem.imagem.src = "./Imagens/bomb.png";
+				potionItem.imagem.src = "./Imagens/potion.png";
+				
+				bombaPreco.imagem.src = "./Imagens/precoBomba.png";
+				heartPreco.imagem.src = "./Imagens/precoHeart.png";
+				
+				
+				// fase 1
+				matrizFase1 = [
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+					];
+					
+				matrizFase2 = [
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
+					[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+					[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+					[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+					[1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1],
+					[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+					[0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
+					[0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
+					[0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
+					[0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+					[0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
+					[0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
+					[1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1],
+					[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+					[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+					[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+					[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1],
+					[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0],
+					[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0]
+					];
+					
+					matrizFase3 = [
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+					];
+					
+					
+				listaMapas[0] = matrizFase1;	
+				listaMapas[1] = matrizFase2;	
+				listaMapas[2] = matrizFase3;
+				
+				//matriz geralde fases
+				matriz = [
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+					];
+					
+				for(var i=0;i<20;i++)
+				{
+					matriz[i] = new Array(28);
+					for(var j=0;j<28;j++)
+					{
+						matriz[i][j] = listaMapas[indexFase][i][j];
+					}
+				}
+				
+			}
+			
+			function draw()
+			{
+				//context.fillStyle = "#ffffff";
+				//context.fillRect(64,64,canvas.width, canvas.height);
+			//pinta os objetos na tela
+			
+				context.drawImage(listaFases[indexFase].imagem,southCavern.x,southCavern.y,southCavern.w,southCavern.h);
+
+				//pinta as bombas no cenario
+				for(var i=0;i<player.listaBombas.length;i++)
+				{
+					if(player.listaBombas[i].ativo)
+					{
+						context.drawImage(player.listaBombas[i].imagem,player.listaBombas[i].x,player.listaBombas[i].y,player.listaBombas[i].w,player.listaBombas[i].h);
+					}
+				}
+				//pinta o shop por baixo dos blocos
+				if(shop.ativo)
+				{
+					context.drawImage(shop.imagem,listaFases[indexFase].xLoja,listaFases[indexFase].yLoja,shop.w,shop.h);	
+				}
+				
+
+				// pinta utilizando conceito de matriz os blocos na tela
+				var posX = 64;
+				var posY = 64;
+				for(var i=0;i<20;i++)
+				{
+					for(var j=0;j<28;j++)
+					{
+						if(matriz[i][j]==1)
+						{
+							context.drawImage(bloco.imagem,posX,posY,bloco.w,bloco.h);
+						}
+						posX +=32;
+					}
+					posY +=32;
+					posX = 64;					
+				}
+				
+				
+				for(var i=0;i<listaFases[indexFase].listaInimigos.length;i++)
+				{
+					if(listaFases[indexFase].listaInimigos[i].ativo)
+					{
+						context.drawImage(listaFases[indexFase].listaInimigos[i].imagem,listaFases[indexFase].listaInimigos[i].x,listaFases[indexFase].listaInimigos[i].y,
+										 listaFases[indexFase].listaInimigos[i].w,listaFases[indexFase].listaInimigos[i].h);
+					}
+				}
+				
+				
+				if(door.ativo)
+				{
+					context.drawImage(door.imagem,listaFases[indexFase].xPorta,listaFases[indexFase].yPorta,door.w,door.h);	
+				}
+				
+				
+				
+				
+				//pinta o player
+
+				if(player.ativo) context.drawImage(player.imagem[player.imgIndex],player.x,player.y,player.w,player.h);	
+				
+				//pinta as explosoes
+				for(var i=0;i<player.listaBombas.length;i++)
+				{
+					if(player.listaBombas[i].explosaoAtiva)
+					{
+						context.drawImage(explosao.imagem[explosao.indexAnimation],player.listaBombas[i].x,player.listaBombas[i].y,player.listaBombas[i].w,player.listaBombas[i].h);
+						explosao.animationDelay--;
+						if(explosao.animationDelay <= 0)
+						{
+							explosao.indexAnimation++;
+							if(explosao.indexAnimation > explosao.imagem.length - 1) explosao.indexAnimation = 0;
+							explosao.animationDelay = 7;
+						}
+						player.listaBombas[i].delay--;
+						if(player.listaBombas[i].delay <=0)
+						{
+							player.listaBombas[i].explosaoAtiva = false;
+							player.listaBombas[i].delay = 15;
+						}
+					}
+				}
+				
+				
+				//pinta a interface
+				
+				// hp do personagem
+				var aux = heart.x;
+				for(var i=1;i<=player.hp;i++)
+				{
+					context.drawImage(heart.imagem,aux,heart.y,heart.w,heart.h);
+					aux += 32;
+				}
+				aux = heartEmpety.x;
+				for(var i=1;i<=player.hpMax;i++)
+				{
+					context.drawImage(heartEmpety.imagem,aux,heartEmpety.y,heartEmpety.w,heartEmpety.h);
+					aux += 32;
+				}
+				
+				//pinta o dinheiro do jogador
+				context.drawImage(gold.imagem,gold.x,gold.y,gold.w,gold.h);
+				context.fillStyle = "#FFFFFF";
+				context.font = "24px Arial";
+				context.fillText(player.moedas, 425, 760);
+				
+				//pinta a quantidade de bombas disponiveis
+				aux = 615;				
+				for(var i=1;i<=player.bombas;i++)
+				{
+					context.drawImage(bomb.imagem,aux,736,bomb.w,bomb.h);
+					aux += 32;
+				}				
+			}
+			
+			function drawShop()
+			{
+				context.drawImage(shopBackground.imagem,shopBackground.x,shopBackground.y,shopBackground.w,shopBackground.h);
+				//pinta os itens a venda
+				if(bombItem.ativo)
+				{
+					context.drawImage(bombItem.imagem,bombItem.x,bombItem.y,bombItem.w,bombItem.h);
+				}
+				
+				if(heartItem.ativo)
+				{
+					context.drawImage(heartItem.imagem,heartItem.x,heartItem.y,heartItem.w,heartItem.h);
+				}
+				
+				if(potionItem.ativo)
+				{
+					context.drawImage(potionItem.imagem,potionItem.x,potionItem.y,potionItem.w,potionItem.h);
+				}
+				
+				//pita os precos
+				context.drawImage(bombaPreco.imagem,bombaPreco.x,bombaPreco.y,bombaPreco.w,bombaPreco.h);
+				context.drawImage(heartPreco.imagem,heartPreco.x,heartPreco.y,heartPreco.w,heartPreco.h);
+				
+				//pinta o player
+				if(player.ativo) context.drawImage(player.imagem[player.imgIndex],player.x,player.y,player.w,player.h);	
+				
+				context.drawImage(shopOut.imagem,shopOut.x,shopOut.y,shopOut.w,shopOut.h);
+			
+				//pinta a interface
+				// hp do personagem
+				var aux = heart.x;
+				for(var i=1;i<=player.hp;i++)
+				{
+					context.drawImage(heart.imagem,aux,heart.y,heart.w,heart.h);
+					aux += 32;
+				}
+				aux = heartEmpety.x;
+				for(var i=1;i<=player.hpMax;i++)
+				{
+					context.drawImage(heartEmpety.imagem,aux,heartEmpety.y,heartEmpety.w,heartEmpety.h);
+					aux += 32;
+				}
+				
+				//pinta o dinheiro do jogador
+				context.drawImage(gold.imagem,gold.x,gold.y,gold.w,gold.h);
+				context.fillStyle = "#FFFFFF";
+				context.font = "24px Arial";
+				context.fillText(player.moedas, 425, 760);
+				
+				//pinta a quantidade de bombas disponiveis
+				aux = 615;				
+				for(var i=1;i<=player.bombas;i++)
+				{
+					context.drawImage(bomb.imagem,aux,736,bomb.w,bomb.h);
+					aux += 32;
+				}
+			}
+			
+			// verifica se o personagem colidiu com os blocos do cenario e impedi a movimentacao
+			function colisaoBloco(direcao)
+			{
+				var posX = 64;
+				var posY = 64;
+				var blocoAux = {'x':0,'y':0,'w':32,'h':32};
+				for(var i=0;i<20;i++)
+				{
+					for(var j=0;j<28;j++)
+					{
+						blocoAux.x = posX;
+						blocoAux.y = posY; 
+						if(intersectRect(player,blocoAux))
+						{
+							if(matriz[i][j] == 1)
+							{
+								if(direcao==1)
+								{
+									player.x -= player.velX;
+								}
+								else if(direcao==2)
+								{
+									player.x += player.velX;
+								}
+								else if(direcao==3)
+								{
+									player.y += player.velY;
+								}
+								else if(direcao==4)
+								{
+									player.y -= player.velY;
+								}
+							}
+						}
+						posX +=32;
+
+					}
+					posY +=32;
+					posX = 64;					
+				}
+			}
+			
+			function colisaoExplosaoBloco(k)
+			{	
+				var posX = 64;
+				var posY = 64;
+				var blocoAux = {'x':0,'y':0,'w':32,'h':32};
+				for(var i=0;i<20;i++)
+				{
+					for(var j=0;j<28;j++)
+					{
+						blocoAux.x = posX;
+						blocoAux.y = posY; 
+						if(intersectRect(player.listaBombas[k],blocoAux))
+						{
+							matriz[i][j] = 0;
+						}
+						// verifica colisao com loja
+						if(intersectRect(player.listaBombas[k],shop) && shop.ativo == false)
+						{
+							shop.ativo = true;
+						}
+						posX +=32;
+					}
+					posY +=32;
+					posX = 64;					
+				}
+
+				
+			}
+			
+				
+			function colisaoExplosaoPlayer(i)
+			{
+				var colisaoPlayer = {'x':player.x + 6,'y':player.y + 6,'w':20,'h':20};
+				if(intersectRect(colisaoPlayer,player.listaBombas[i]))
+				{
+					player.hp--;
+					if(player.hp<=0)
+					{
+						estado = 2;
+						player.ativo = false;
+					}
+				}
+			}
+			
+			function colisaoExplosaoInimigo(i)
+			{
+				for(var j=0;j<listaFases[indexFase].listaInimigos.length;j++)
+				{
+					if(intersectRect(listaFases[indexFase].listaInimigos[j],player.listaBombas[i]) && listaFases[indexFase].listaInimigos[j].ativo == true)
+					{
+						listaFases[indexFase].listaInimigos[j].hp--;
+						if(listaFases[indexFase].listaInimigos[j].hp <=0)
+						{
+							listaFases[indexFase].numeroInimigos--;
+							listaFases[indexFase].listaInimigos[j].ativo = false;
+							player.moedas += listaFases[indexFase].listaInimigos[j].moedas;
+						}
+					}
+				}
+			}
+			
+			//controla colisao
+			function intersectRect(r1, r2) {
+				  return !(r2.x > r1.x + r1.w || 
+						   r2.x + r2.w < r1.x || 
+						   r2.y > r1.y + r1.h ||
+						   r2.y + r2.h < r1.y);
+			}
+			
+			function playerAnimation(indexInicial,indexFinal)
+			{
+				auxAnimation--;
+				if(auxAnimation <= 0)
+				{
+					auxAnimation = player.animationDelay;
+					player.imgIndex++;
+					if(player.imgIndex > indexFinal) player.imgIndex = indexInicial;
+				}
+			}
+			
+			// captura evento e realiza acoes do player
+			function playerControls(event)
+			{
+				//console.log(event);
+				//movimenta o personagem 
+				if (event.keyCode == 68)
+				{	
+					player.x += player.velX;
+					//faz animacao
+					player.imgIndex = 8;
+					playerAnimation(6,8);
+
+					
+					//controla a colisao com a bomba
+					for(var i=0;i<player.listaBombas.length;i++)
+					{
+						var colisaoPlayer = {'x':player.x + 6,'y':player.y + 6,'w':20,'h':20};
+						var colisaoBomba = {'x':player.listaBombas[i].x + 6,'y':player.listaBombas[i].y + 6,'w':20,'h':20};
+						if(intersectRect(colisaoPlayer,colisaoBomba) && player.listaBombas[i].ready == true)
+						{
+							player.x -= player.velX;
+						}
+					}					
+					if(estado==1) colisaoBloco(1);
+				}
+				else if (event.keyCode == 65)
+				{
+					player.x -= player.velX;
+					player.imgIndex = 5;
+					playerAnimation(3,5);
+					for(var i=0;i<player.listaBombas.length;i++)
+					{
+						var colisaoPlayer = {'x':player.x + 6,'y':player.y + 6,'w':20,'h':20};
+						var colisaoBomba = {'x':player.listaBombas[i].x + 6,'y':player.listaBombas[i].y + 6,'w':20,'h':20};
+						if(intersectRect(colisaoPlayer,colisaoBomba) && player.listaBombas[i].ready == true)
+						{
+							player.x += player.velX;
+						}
+					}	
+					if(estado==1) colisaoBloco(2);
+				}
+				else if (event.keyCode == 87)
+				{
+					player.y -= player.velY;
+					player.imgIndex = 11;
+					playerAnimation(9,11);
+					for(var i=0;i<player.listaBombas.length;i++)
+					{	
+						var colisaoPlayer = {'x':player.x + 6,'y':player.y + 6,'w':20,'h':20};
+						var colisaoBomba = {'x':player.listaBombas[i].x + 6,'y':player.listaBombas[i].y + 6,'w':20,'h':20};
+						if(intersectRect(colisaoPlayer,colisaoBomba) && player.listaBombas[i].ready == true)
+						{
+							player.y += player.velY;
+						}
+					}	
+					if(estado==1) colisaoBloco(3);
+				}
+				else if (event.keyCode == 83)
+				{
+					player.y += player.velY;
+					player.imgIndex = 2;
+					playerAnimation(0,2);
+					for(var i=0;i<player.listaBombas.length;i++)
+					{
+						var colisaoPlayer = {'x':player.x + 6,'y':player.y + 6,'w':20,'h':20};
+						var colisaoBomba = {'x':player.listaBombas[i].x + 6,'y':player.listaBombas[i].y + 6,'w':20,'h':20};
+						if(intersectRect(colisaoPlayer,colisaoBomba) && player.listaBombas[i].ready == true)
+						{
+							player.y -= player.velY;
+						}
+					}	
+					if(estado==1) colisaoBloco(4);
+				}
+				else if (event.keyCode == 73 && player.bombas > 0)	// tecla i , coloca bomba
+				{	
+					player.listaBombas.push({'x':player.x,'y':player.y,'w':32,'h':32,'ativo':true,'ready':false,'delay':15,'imagem':bomb.imagem,
+											'explosaoAtiva':false,'imagemExplosao':explosao.imagem});
+					player.bombas--;
+					if(player.bombas < 0) player.bombas = 0;
+				}
+				else if(event.keyCode == 79)  // tecla O,  explode a bomba
+				{
+					for(var i=0;i<player.listaBombas.length;i++)
+					{
+						player.listaBombas[i].ativo = false;
+						if(player.listaBombas[i].ready)
+						{
+							player.listaBombas[i].ready = false;
+							player.listaBombas[i].x -= 16;
+							player.listaBombas[i].y -= 16;
+							player.listaBombas[i].w = 64;
+							player.listaBombas[i].h = 64;
+							player.listaBombas[i].explosaoAtiva = true;						
+							colisaoExplosaoBloco(i);
+							colisaoExplosaoPlayer(i);
+							colisaoExplosaoInimigo(i);							
+						}
+						
+					}
+					player.bombas = player.maxBombas;
+					
+					
+				}
+				//console.log(player.x,player.y);
+			}
+			
+			function enemyControl()
+			{
+				var direcao;
+				for(var i=0;i<listaFases[indexFase].listaInimigos.length;i++)
+				{
+					//1 esquerda  2- direita  3 - cima  4 - baixo
+					if(listaFases[indexFase].listaInimigos[i].ativo)
+					{
+						if(listaFases[indexFase].listaInimigos[i].id == 1)
+						{
+							//esclhe uma direcao
+							direcao = (Math.random() * (5-1) + 1);
+							//se movimenta na direcao escolhida pelo numero de passos do inimigo
+							for(var j=listaFases[indexFase].listaInimigos[i].passos;j>0;j--)
+							{	
+								listaFases[indexFase].listaInimigos[i].delay--;
+								//quando delay de movimento do inimigo chegar a zero, realiza o movimento
+								if(listaFases[indexFase].listaInimigos[i].delay <= 0)
+								{	
+									//movimenta o inimigo e verifica a colisao com blocos
+									if(direcao >= 1 && direcao < 2 )
+									{	
+										listaFases[indexFase].listaInimigos[i].x -= listaFases[indexFase].listaInimigos[i].velX;
+										colisaoInimigoBloco(1,i);
+									}
+									else if(direcao >= 2 && direcao < 3 )
+									{
+										listaFases[indexFase].listaInimigos[i].x += listaFases[indexFase].listaInimigos[i].velX;
+										colisaoInimigoBloco(2,i);
+									}
+									else if(direcao >= 3 && direcao < 4 )
+									{
+										listaFases[indexFase].listaInimigos[i].y -= listaFases[indexFase].listaInimigos[i].velY;
+										colisaoInimigoBloco(3,i);
+									}
+									else if(direcao >= 4 && direcao < 5 )
+									{
+										listaFases[indexFase].listaInimigos[i].y += listaFases[indexFase].listaInimigos[i].velY;
+										colisaoInimigoBloco(4,i);
+									}
+									//limite de colisao da tela
+									if(listaFases[indexFase].listaInimigos[i].x <= 64)
+									{
+										listaFases[indexFase].listaInimigos[i].x = 64;
+									}
+									if(listaFases[indexFase].listaInimigos[i].y <= 64)
+									{
+										listaFases[indexFase].listaInimigos[i].y = 64;
+									}
+									if((listaFases[indexFase].listaInimigos[i].x +listaFases[indexFase].listaInimigos[i].w) >= (canvas.width - 64))
+									{
+										listaFases[indexFase].listaInimigos[i].x = (canvas.width - 64) - listaFases[indexFase].listaInimigos[i].w;
+									}
+									if((listaFases[indexFase].listaInimigos[i].y + listaFases[indexFase].listaInimigos[i].h) >= (canvas.height - 64))
+									{
+										listaFases[indexFase].listaInimigos[i].y = (canvas.height - 64) - listaFases[indexFase].listaInimigos[i].h;
+									}
+									listaFases[indexFase].listaInimigos[i].delay = listaFases[indexFase].listaInimigos[i].delayMax;							
+								}			
+							}
+						}
+						// somente deslocamento em x
+						else if(listaFases[indexFase].listaInimigos[i].id == 2)
+						{
+							for(var k=listaFases[indexFase].listaInimigos[i].passos;k>0;k--)
+							{
+								listaFases[indexFase].listaInimigos[i].delay--;
+								if(listaFases[indexFase].listaInimigos[i].delay <= 0)
+								{
+									listaFases[indexFase].listaInimigos[i].x += listaFases[indexFase].listaInimigos[i].velX;
+									colisaoInimigoBloco(1,i);
+									console.log(listaFases[indexFase].listaInimigos[0].velX + "");
+
+									//limite de colisao da tela
+									if(listaFases[indexFase].listaInimigos[i].x <= 64)
+									{
+										listaFases[indexFase].listaInimigos[i].x = 64;
+										listaFases[indexFase].listaInimigos[i].velX *= -1;
+									}
+									if((listaFases[indexFase].listaInimigos[i].x + listaFases[indexFase].listaInimigos[i].w) >= (canvas.width - 64))
+									{
+										listaFases[indexFase].listaInimigos[i].x = (canvas.width - 64) - listaFases[indexFase].listaInimigos[i].w;
+										listaFases[indexFase].listaInimigos[i].velX *= -1;
+									}
+									listaFases[indexFase].listaInimigos[i].delay = listaFases[indexFase].listaInimigos[i].delayMax;
+								}
+							}
+						}
+						//somente deslocamento em y
+						else if(listaFases[indexFase].listaInimigos[i].id == 3)
+						{
+							for(var k=listaFases[indexFase].listaInimigos[i].passos;k>0;k--)
+							{
+								listaFases[indexFase].listaInimigos[i].delay--;
+								if(listaFases[indexFase].listaInimigos[i].delay <= 0)
+								{
+									listaFases[indexFase].listaInimigos[i].y += listaFases[indexFase].listaInimigos[i].velY;
+									colisaoInimigoBloco(2,i);
+									console.log(listaFases[indexFase].listaInimigos[0].velY + "");
+
+									//limite de colisao da tela
+									if(listaFases[indexFase].listaInimigos[i].y <= 64)
+									{
+										listaFases[indexFase].listaInimigos[i].y = 64;
+										listaFases[indexFase].listaInimigos[i].velY *= -1;
+									}
+									if((listaFases[indexFase].listaInimigos[i].y + listaFases[indexFase].listaInimigos[i].h) >= (canvas.height - 64))
+									{
+										listaFases[indexFase].listaInimigos[i].y = (canvas.height - 64) - listaFases[indexFase].listaInimigos[i].h;
+										listaFases[indexFase].listaInimigos[i].velY *= -1;
+									}
+									listaFases[indexFase].listaInimigos[i].delay = listaFases[indexFase].listaInimigos[i].delayMax;
+								}
+							}
+						}
+							
+						//verifica colisao dos inimigos com jogador e retira hp do jogador
+						var colisaoPlayer = {'x':player.x + 6,'y':player.y + 6,'w':20,'h':20};
+						var colisaoInimigo = {'x':listaFases[indexFase].listaInimigos[i].x + 6,'y':listaFases[indexFase].listaInimigos[i].y + 6,'w':20,'h':20};
+						if(intersectRect(colisaoInimigo,colisaoPlayer) && player.hit == false && listaFases[indexFase].listaInimigos[i].ativo == true)
+						{	
+							player.hit = true;
+							player.hp -= listaFases[indexFase].listaInimigos[i].ataque;
+							if(player.hp <=0)
+							{						
+								player.hp = 0;
+								estado = 2;
+							}
+						}
+					}
+				}
+			}
+			
+			function colisaoInimigoBloco(direcao,k)
+			{
+				var posX = 64;
+				var posY = 64;
+				var blocoAux = {'x':0,'y':0,'w':32,'h':32};
+				for(var i=0;i<20;i++)
+				{
+					for(var j=0;j<28;j++)
+					{
+						blocoAux.x = posX;
+						blocoAux.y = posY; 
+						if(intersectRect(listaFases[indexFase].listaInimigos[k],blocoAux))
+						{
+							if(matriz[i][j] == 1)
+							{
+								if(direcao==1)
+								{
+									if (listaFases[indexFase].listaInimigos[k].id == 1)
+									{
+										listaFases[indexFase].listaInimigos[k].x += listaFases[indexFase].listaInimigos[k].velX;
+									}
+									else if (listaFases[indexFase].listaInimigos[k].id == 2) 
+									{
+										if(listaFases[indexFase].listaInimigos[k].velX < 0)
+										{
+											listaFases[indexFase].listaInimigos[k].velX *= -1;
+											listaFases[indexFase].listaInimigos[k].x += listaFases[indexFase].listaInimigos[k].velX;
+
+										}
+										else
+										{	
+											//
+											listaFases[indexFase].listaInimigos[k].x -= (listaFases[indexFase].listaInimigos[k].velX);
+											listaFases[indexFase].listaInimigos[k].velX *= -1;
+
+										}									
+										//
+									}
+									
+								}
+								else if(direcao==2)
+								{
+									if (listaFases[indexFase].listaInimigos[k].id == 1)
+									{
+										listaFases[indexFase].listaInimigos[k].x -= listaFases[indexFase].listaInimigos[k].velX;
+									}
+									else if (listaFases[indexFase].listaInimigos[k].id == 3) 
+									{
+										if(listaFases[indexFase].listaInimigos[k].velY < 0)
+										{
+											listaFases[indexFase].listaInimigos[k].velY *= -1;
+											listaFases[indexFase].listaInimigos[k].y += listaFases[indexFase].listaInimigos[k].velY;
+
+										}
+										else
+										{	
+											//
+											listaFases[indexFase].listaInimigos[k].y -= (listaFases[indexFase].listaInimigos[k].velY);
+											listaFases[indexFase].listaInimigos[k].velY *= -1;
+
+										}									
+										//
+									}
+								
+								}
+								else if(direcao==3)
+								{
+									if (listaFases[indexFase].listaInimigos[k].id == 1) listaFases[indexFase].listaInimigos[k].y += listaFases[indexFase].listaInimigos[k].velY;
+								}
+								else if(direcao==4)
+								{
+									if (listaFases[indexFase].listaInimigos[k].id == 1) listaFases[indexFase].listaInimigos[k].y -= listaFases[indexFase].listaInimigos[k].velY;
+								}
+							}
+						}
+						posX +=32;
+
+					}
+					posY +=32;
+					posX = 64;					
+				}
+			}
+			
+			function bombControl()
+			{
+			//quando o jogador coloca a bomba e sai da colisao ela liga o bloqueio
+				for(var i=0;i<player.listaBombas.length;i++)
+				{
+					if(!intersectRect(player.listaBombas[i],player))
+					{
+						if(player.listaBombas[i].ativo && player.listaBombas[i].ready == false)
+						{
+							player.listaBombas[i].ready = true;
+						}
+					
+					}
+				}
+				
+			}
+			
+			function faseControl()
+			{
+				if(listaFases[indexFase].numeroInimigos <= 0)
+				{
+					door.ativo =true;
+				}
+				
+				
+				if(player.hp <=0) player.ativo = false;
+				door.x = listaFases[indexFase].xPorta;
+				door.y = listaFases[indexFase].yPorta;
+				if(intersectRect(player,door) && door.ativo == true)
+				{
+					player.x = 864;
+					player.y = 672;				
+					door.ativo = false;
+					shop.ativo = false;
+					indexFase++;
+					//muda de fase
+					for(var i=0;i<20;i++)
+					{
+						matriz[i] = new Array(28);
+						for(var j=0;j<28;j++)
+						{
+							matriz[i][j] = listaMapas[indexFase][i][j];
+						}
+					}
+				}
+				shop.x = listaFases[indexFase].xLoja;
+				shop.y = listaFases[indexFase].yLoja;
+				if(intersectRect(player,shop) && shop.ativo == true)
+				{
+					//entra no shop
+					estado = 3;
+					shop.ativo = false;
+					player.x = 672;
+					player.y = 640;
+				}
+				
+				
+				if(estado==3)
+				{
+					if(intersectRect(player,shopOut))
+					{
+						estado=1;
+						player.x = 864 ;
+						player.y = 672;
+						bombItem.ativo = true;
+						heartItem.ativo = true;
+					}
+					//compra os itens na loja
+					if(intersectRect(player,bombItem) && bombItem.ativo == true && player.moedas >= 10 && player.maxBombas < 3)
+					{
+						player.bombas++;
+						player.maxBombas++;
+						if(player.bombas >= 3) player.bombas = 3;
+						if(player.maxBombas >= 3) player.maxBombas = 3;
+						player.moedas -= 10;
+						bombItem.ativo = false;
+						
+					}
+					
+					if(intersectRect(player,heartItem) && heartItem.ativo == true && player.moedas >= 15 && player.hpMax < 5)
+					{
+						player.hpMax++;
+						player.hp++;
+						if(player.hpMax >= 5) player.hpMax = 5;
+						if(player.hp >= 5) player.hp = 5;
+						player.moedas -= 15;
+						heartItem.ativo = false;
+						
+					}
+					
+					if(intersectRect(player,potionItem) && potionItem.ativo == true && player.moedas >= 7 && player.hp < player.hpMax)
+					{
+						player.hp++;
+						if(player.hp >= 5) player.hp = 5;
+						player.moedas -= 7;
+						potionItem.ativo = false;
+					}
+				}
+				
+			}
+			
+			//calcula as regras do personagem 
+			function playerRules()
+			{
+			//conta tempo quando o jogador sofre dano,tempo que o personagem fica ivuneravel ao sofrer dano 
+				if(player.hit)
+				{
+					player.delayHit--;
+					if(player.delayHit <=0)
+					{
+						player.delayHit = 120;
+						player.hit = false;
+					}
+				}
+			if(estado==1)
+			{
+			//limita o movimento do personagem dentro do mapa
+				if(player.x <= 64)
+				{
+					player.x = 64;
+				}
+				if(player.y <= 64)
+				{
+					player.y = 64;
+				}
+				if((player.x + player.w) >= (canvas.width - 64))
+				{
+					player.x = (canvas.width - 64) - player.w;
+				}
+				if((player.y + player.h) >= (canvas.height - 64))
+				{
+					player.y = (canvas.height - 64) - player.h;
+				}
+			}
+			else if(estado==3)
+			{
+				if(player.x <= 415)
+				{
+					player.x = 415;
+				}
+				if(player.y <= 380)
+				{
+					player.y = 380;
+				}
+				if((player.x + player.w) >= (canvas.width - 64))
+				{
+					player.x = (canvas.width - 64) - player.w;
+				}
+				if((player.y + player.h) >= (canvas.height - 64))
+				{
+					player.y = (canvas.height - 64) - player.h;
+				}
+			}
+			
+			}
+			
+			function pintarGameOver() { 
+				context.fillStyle = "#FF0000";
+				context.font = "72px Arial";
+				context.fillText("G A M E   O V E R", 150, 200);
+			}
+
+			//funcao principal do loop
+			function game()
+			{
+				if(estado == 1)
+				{
+					draw();
+					playerRules();
+					bombControl();
+					enemyControl();
+					faseControl();
+				}
+				else if(estado == 2)
+				{
+					draw();
+					pintarGameOver();
+				}
+				else if(estado == 3)
+				{
+					drawShop();
+					playerRules();
+					faseControl();
+				}
+				
+			}
+			
+			
+		</script>
+	</head>
+	<body>
+		<div>
+			<canvas id="canvas" width="1024" height="768" />
+		</div>
+		<div>
+			<h1> Controles </h1>
+			<p>Utilize as teclas W S A D para movimentar o personagem</p>
+			<p>A tecla I coloca bomba e a tecla O explode a bomba</p>
+			<p>Derrote todos inimigos para passar de fase</p>
+		</div>
+		
+		
+		<script>
+			start();
+			var interv = window.setInterval(game, 10);
+			window.addEventListener("keydown", playerControls);
+		</script>
+	</body>
+</html>
