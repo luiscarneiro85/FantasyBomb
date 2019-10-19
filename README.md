@@ -1,5 +1,12 @@
 # FantasyBomb
 
-Explore uma torre repleta de inimigos, segredos e passagens secretas.
+STATUS: Na geladeira
 
-Inspirado em Bomberman(NES) e Fantasy Zone(Master System), jogo desenvolvido em HTML.
+EQUIPE: Luis Carneiro (Programação e Design)
+
+Este game inspirado em Bomberman nasceu em um teste de desenvolver um game utilizando apenas html.
+
+
+
+
+
